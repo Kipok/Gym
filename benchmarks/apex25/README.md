@@ -6,25 +6,22 @@ problems). Companion to the larger `apex_shortlist` benchmark.
 
 ## Verification
 
-Uses the `math_with_autograder` resource server: **symbolic-first with an
-autograder LLM fallback**. The HuggingFace `math-verify` library checks symbolic
-equivalence of the model's `\boxed{...}` against `expected_answer`; only on a
-symbolic miss is the judge asked "is this answer Correct or Incorrect?". Answers
-math-verify already accepts never reach the judge, so grading stays deterministic
-for nearly every rollout.
+Uses `math_with_judge`: **symbolic-first with a dedicated Luna medium fallback**.
+The final response must contain a nonempty, complete `\boxed{...}`. Missing or
+empty boxes receive zero without a judge call. `math-verify` checks symbolic
+equivalence first; only misses reach Luna with the raw boxed answer, reference,
+and question. A positive judgment is checked again with the answers swapped,
+and both judgments must be positive for credit.
 
-The judge is a **dedicated** model (`judge_nemotron3ultra.yaml` →
-Nemotron 3 Ultra by default), not the policy model, so the grading standard stays
-fixed when comparing different policy models.
+The judge is separate from the policy model. Existing
+`*_math_with_autograder_*` server and agent names remain for compatibility,
+although the underlying resource server is now `math_with_judge`.
+See [the shared grading decision](../matharena-judging.md) for validation,
+endpoint settings, known limitations, and comparison with MathArena.
 
-APEX answers are short numeric / fractional / radical values, which math-verify
-handles well: graded against MathArena's own `correct` labels on their published
-model outputs, symbolic-only already agrees on **99.9%** of rollouts with no
-false positives. The autograder is used anyway so that all MathArena benchmarks
-here (`apex25`, `arxivmath_*`) grade identically and stay mutually comparable —
-and it recovers formatting-only misses such as `6\,266\,942\,768` for
-`6266942768`. Scores may therefore run marginally above the MathArena
-leaderboard, which grades symbolically only.
+MathArena grades final-answer math symbolically without an LLM fallback.
+Gym's parser and fallback differ, so its scores are not an exact reproduction
+of the leaderboard's grading methodology.
 
 ## Prompt
 
@@ -62,10 +59,13 @@ gym eval run --no-serve \
     --agent apex25_math_with_autograder_simple_agent \
     --input benchmarks/apex25/data/apex25_benchmark.jsonl \
     --output results/apex25_rollouts.jsonl \
-    --num-repeats 4
+    --num-repeats 32
 ```
 
-The judge needs `NVIDIA_API_KEY` in the environment.
+The judge needs `OPENAI_API_KEY` (or `JUDGE_API_KEY`) in the environment.
+See [judge setup](../matharena-judging.md#endpoint-and-request-settings) for
+provider overrides. The example supplies all repeats at collection time; do not
+also repeat the prepared dataset.
 
 With only 12 problems the per-run variance is high — use several repeats
 (`--num-repeats`) and report `avg@k`.
