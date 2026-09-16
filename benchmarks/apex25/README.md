@@ -6,18 +6,14 @@ problems). Companion to the larger `apex_shortlist` benchmark.
 
 ## Verification
 
-Uses `math_with_judge`: **symbolic-first with a dedicated Luna medium fallback**.
-The final response must contain a nonempty, complete `\boxed{...}`. Missing or
-empty boxes receive zero without a judge call. `math-verify` checks symbolic
-equivalence first; only misses reach Luna with the raw boxed answer, reference,
-and question. A positive judgment is checked again with the answers swapped,
-and both judgments must be positive for credit.
+Uses `math_with_judge` with **`should_use_judge: false`**, matching APEX
+Shortlist. The final response must contain a nonempty, complete `\boxed{...}`.
+Missing or empty boxes receive zero. `math-verify` checks symbolic equivalence;
+there is no LLM fallback and no judge service or judge credentials are required.
 
-The judge is separate from the policy model.
-
-MathArena grades final-answer math symbolically without an LLM fallback.
-Gym's parser and fallback differ, so its scores are not an exact reproduction
-of the leaderboard's grading methodology.
+This follows MathArena's symbolic-only grading approach. Gym uses `math-verify`
+rather than MathArena's parser, so formatting and parsing differences can still
+affect scores.
 
 ## Prompt
 
@@ -58,12 +54,8 @@ gym eval run --no-serve \
     --num-repeats 32
 ```
 
-The judge needs `OPENAI_API_KEY` (or `JUDGE_API_KEY`) in the environment.
-The shared [judge config](../judge_luna.yaml) uses the public OpenAI Responses
-API. For another compatible provider, set `JUDGE_BASE_URL`, `JUDGE_MODEL`, and
-`JUDGE_API_KEY` together. It must support medium reasoning through the Responses
-API. The example supplies all repeats at collection time; do not also repeat
-the prepared dataset.
+The example supplies all repeats at collection time; do not also repeat the
+prepared dataset.
 
 With only 12 problems the per-run variance is high — use several repeats
 (`--num-repeats`) and report `avg@k`.
