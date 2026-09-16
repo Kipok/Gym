@@ -20,11 +20,7 @@ equivalence first; only misses reach Luna with the raw boxed answer, reference,
 and question. A positive judgment is checked again with the answers swapped,
 and both judgments must be positive for credit.
 
-The judge is separate from the policy model. Existing
-`*_math_with_autograder_*` server and agent names remain for compatibility,
-although the underlying resource server is now `math_with_judge`.
-See [the shared grading decision](../matharena-judging.md) for validation,
-endpoint settings, known limitations, and comparison with MathArena.
+The judge is separate from the policy model.
 
 MathArena grades final-answer math symbolically without an LLM fallback.
 Gym's parser and fallback differ, so its scores are not an exact reproduction
@@ -64,13 +60,15 @@ gym env start \
 
 ```bash
 gym eval run --no-serve \
-    --agent arxivmath_0526_math_with_autograder_simple_agent \
+    --agent arxivmath_0526_math_with_judge_simple_agent \
     --input benchmarks/arxivmath_0526/data/arxivmath_0526_benchmark.jsonl \
     --output results/arxivmath_0526_rollouts.jsonl \
     --num-repeats 16
 ```
 
 The judge needs `OPENAI_API_KEY` (or `JUDGE_API_KEY`) in the environment.
-See [judge setup](../matharena-judging.md#endpoint-and-request-settings) for
-provider overrides. The example supplies all repeats at collection time; do not
-also repeat the prepared dataset.
+The shared [judge config](../judge_luna.yaml) uses the public OpenAI Responses
+API. For another compatible provider, set `JUDGE_BASE_URL`, `JUDGE_MODEL`, and
+`JUDGE_API_KEY` together. It must support medium reasoning through the Responses
+API. The example supplies all repeats at collection time; do not also repeat
+the prepared dataset.

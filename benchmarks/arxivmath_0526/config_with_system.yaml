@@ -3,10 +3,8 @@ config_paths:
   - resources_servers/math_with_judge/configs/math_with_judge.yaml
   - benchmarks/judge_luna.yaml
 
-# Keep historical instance names for existing CLI commands and metric consumers.
-# The implementation is math_with_judge: boxed answers, symbolic-first grading,
-# and Luna fallback with a second swapped-order check after a positive verdict.
-arxivmath_0526_math_with_autograder_resources_server:
+# Symbolic-first grading with Luna fallback and positive swapped-order confirmation.
+arxivmath_0526_math_with_judge_resources_server:
   _inherit_from: math_with_judge
   resources_servers:
     math_with_judge:
@@ -15,12 +13,12 @@ arxivmath_0526_math_with_autograder_resources_server:
         type: responses_api_models
         name: judge_model
 
-arxivmath_0526_math_with_autograder_simple_agent:
+arxivmath_0526_math_with_judge_simple_agent:
   _inherit_from: math_with_judge_simple_agent
   responses_api_agents:
     simple_agent:
       resources_server:
-        name: arxivmath_0526_math_with_autograder_resources_server
+        name: arxivmath_0526_math_with_judge_resources_server
       datasets:
       - name: arxivmath_0526
         type: benchmark

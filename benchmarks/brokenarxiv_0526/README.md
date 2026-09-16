@@ -28,9 +28,6 @@ MathArena uses Gemini 3.1 Pro medium. This is a different judge configuration,
 so record the judge alongside the score rather than treating the result as an
 exact reproduction of MathArena's grading.
 
-See [the shared grading decision](../matharena-judging.md) for the comparison,
-cost/reliability rationale, request settings, and remaining accuracy limitations.
-
 ## Prompt
 
 Byte-identical to MathArena's BrokenArXiv prompt
@@ -76,6 +73,8 @@ gym eval run --no-serve \
 ```
 
 The judge needs `OPENAI_API_KEY` (or `JUDGE_API_KEY`) in the environment.
-See [judge setup](../matharena-judging.md#endpoint-and-request-settings) for
-provider overrides. The example supplies all repeats at collection time; do not
-also repeat the prepared dataset.
+The shared [judge config](../judge_luna.yaml) uses the public OpenAI Responses
+API. For another compatible provider, set `JUDGE_BASE_URL`, `JUDGE_MODEL`, and
+`JUDGE_API_KEY` together. It must support medium reasoning through the Responses
+API. The example supplies all repeats at collection time; do not also repeat
+the prepared dataset.
