@@ -307,6 +307,12 @@ class ScicodeAgent(SimpleResponsesAPIAgent):
                     )
                 )
             step_record["status"] = "generated"
+            # The top-level response retains only the final step. Preserve stop
+            # evidence for every generation, even when model-call capture is off.
+            step_record["response_id"] = model_response.id
+            step_record["response_status"] = last_response_json.get("status")
+            step_record["incomplete_details"] = last_response_json.get("incomplete_details")
+            step_record["error"] = last_response_json.get("error")
             step_record["usage"] = model_response.usage.model_dump() if model_response.usage is not None else None
             usage_complete = usage_complete and model_response.usage is not None
             usage = accumulate_response_usage(usage, model_response.usage)
