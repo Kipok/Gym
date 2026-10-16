@@ -672,3 +672,34 @@ async def test_collector_builds_perf_from_generated_substeps(prefilled):
     _attach_ng_perf(result, observability_enabled=True)
     assert result["ng_perf"]["token_observability_coverage"] == (expected - 1) / expected
     assert result["ng_perf"]["completion_tokens"] == (expected - 1) * 20
+
+
+class TestHeadlineRepeatIntervals:
+    @pytest.mark.asyncio
+    async def test_endpoint_exports_weighted_subtask_and_problem_intervals(self):
+        rows = [
+            {
+                **_repeat(repeat, passed, total),
+                "_ng_task_index": task,
+                "agent_ref": {"name": "scicode"},
+                "reward": float(passed == total),
+            }
+            for task, total, values in [(0, 2, [2, 1, 0]), (1, 4, [3, 4, 3])]
+            for repeat, passed in enumerate(values)
+        ]
+        result = await _agent().aggregate_metrics(AggregateMetricsRequest(verify_responses=rows))
+        for metric, mean, sem in [("subtask_accuracy", 13 / 18, 1 / 9), ("mean/problem_accuracy", 1 / 3, 1 / 6)]:
+            assert result.key_metrics[f"mean_across_repeats/{metric}"] == pytest.approx(mean)
+            assert result.key_metrics[f"ci_low_95_across_repeats/{metric}"] == pytest.approx(
+                mean - 4.30265272975 * sem
+            )
+            assert result.key_metrics[f"ci_high_95_across_repeats/{metric}"] == pytest.approx(
+                mean + 4.30265272975 * sem
+            )
+        assert result.key_metrics["subtask_accuracy"] == pytest.approx(13 / 18)
+
+    @pytest.mark.asyncio
+    async def test_single_repeat_has_no_headline_interval(self):
+        rows = [{**_repeat(0, 1, 2), "_ng_task_index": 0, "agent_ref": {"name": "scicode"}, "reward": 0.0}]
+        result = await _agent().aggregate_metrics(AggregateMetricsRequest(verify_responses=rows))
+        assert not any(key.startswith("ci_low_95_across_repeats/") for key in result.key_metrics)

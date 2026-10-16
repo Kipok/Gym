@@ -50,6 +50,7 @@ from nemo_gym.base_responses_api_agent import (
 )
 from nemo_gym.config_types import ModelServerRef, ResourcesServerRef
 from nemo_gym.global_config import ROLLOUT_INDEX_KEY_NAME
+from nemo_gym.metrics_config import Stat
 from nemo_gym.openai_utils import (
     NeMoGymEasyInputMessage,
     NeMoGymResponse,
@@ -355,6 +356,8 @@ class ScicodeAgent(SimpleResponsesAPIAgent):
                 }
             )
         metrics = await super().aggregate_metrics(body)
+        # Custom repeat estimates are added after the shared headline selection.
+        metrics.key_metrics.update(self.get_key_metrics(metrics.agent_metrics))
         # NeMo Evaluator requires numeric scores. Omit unavailable values rather
         # than exporting nulls or inventing zero consumption.
         metrics.agent_metrics = {k: v for k, v in metrics.agent_metrics.items() if v is not None}
@@ -379,6 +382,12 @@ class ScicodeAgent(SimpleResponsesAPIAgent):
             for k, v in agent_metrics.items()
             if k.startswith("mean/")
             or k.startswith("subtask_accuracy")
+            or k
+            in {
+                f"{stat.across_repeats_prefix}{metric}"
+                for stat in (Stat.MEAN, Stat.CI_LOW_95, Stat.CI_HIGH_95)
+                for metric in ("subtask_accuracy", "mean/problem_accuracy")
+            }
             or k in {"generation_coverage", "token_usage_complete"}
         }
 
