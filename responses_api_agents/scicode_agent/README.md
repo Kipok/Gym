@@ -31,6 +31,10 @@ steps / non-prefilled steps. With no eligible sub-steps, the subproblem mean is 
 - Pre-generation context rejections, prefilled steps, and skipped steps use zero
   tokens. Earlier generations still count. Aborted rollouts are excluded from
   completed-rollout metrics.
+- The vLLM adapter records zero usage for its synthetic empty response when the
+  backend rejects a request for exceeding context before generation. This keeps
+  earlier sub-step token totals available; it does not replace unknown usage on
+  actual generated responses. Older saved records are not repaired automatically.
 - If any generated response lacks usage, suppress all aggregate token statistics,
   omit the token means, and report `token_usage_complete: false`.
   Accuracy, coverage, and raw rollout records remain available. Missing optional

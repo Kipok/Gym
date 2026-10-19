@@ -27,6 +27,7 @@ from typing import Any, Awaitable, ClassVar, Dict, List, Literal, Optional, Unio
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+from openai.types.completion_usage import CompletionUsage
 from pydantic import Field, PrivateAttr, model_validator
 
 from nemo_gym._checkpoint.model import note_generation_backend, note_generation_request
@@ -1234,6 +1235,9 @@ class VLLMModel(SimpleResponsesAPIModel):
                     _mark_propagated_overflow(e)
                     raise
                 res = self._create_empty_chat_completion()
+                # The backend rejected this request before model execution. Preserve
+                # known zero usage instead of making multi-call totals unknown.
+                res.usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
                 res.choices[0].finish_reason = "length"
                 execution.update(response_source="local", local_response_reason="context_length_exceeded")
                 return res
@@ -1582,6 +1586,9 @@ class VLLMModel(SimpleResponsesAPIModel):
                     _mark_propagated_overflow(e)
                     raise
                 res = self._create_empty_chat_completion()
+                # The backend rejected this request before model execution. Preserve
+                # known zero usage instead of making multi-call totals unknown.
+                res.usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
                 res.choices[0].finish_reason = "length"
                 execution.update(response_source="local", local_response_reason="context_length_exceeded")
                 return res
