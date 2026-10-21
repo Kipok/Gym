@@ -59,10 +59,8 @@ to write the next function directly.
 
 ## Dependencies
 
-The resources server executes generated SciCode solutions in its own venv, so its
-`requirements.txt` pins `scipy<1.14` — the last range that keeps `scipy.integrate.simps` (used by
-some test cases, removed in scipy 1.14) while still providing Python 3.12 wheels — plus `numpy`,
-`matplotlib`, `h5py`, and `sympy`.
+Original SciCode uses a separate legacy grading environment; see
+[Original SciCode grading environment](#original-scicode-grading-environment) below.
 
 ## Running servers
 
@@ -135,3 +133,25 @@ model-generated, so treat the rollout file accordingly.
 
 Code: Apache 2.0
 Data (`SciCode1/SciCode`, `test_data.h5`): Apache 2.0
+
+## Original SciCode grading environment
+
+The benchmark automatically prepares an isolated Python 3.11 environment using `uv`
+with `resources_servers/scicode/grading-requirements.txt`. SciPy 1.10.1 matches
+NeMo-Skills' SciCode evaluator and preserves `scipy.integrate.simps`, used by the
+original problem dependencies. The Python 3.13+ Gym server keeps its own packages.
+The other direct scientific dependencies are pinned for repeatable execution.
+
+The first start requires access to Python/package downloads and a writable
+`grading_venv_path` (default `resources_servers/scicode/.grading_venv`). Set that
+path to a persistent writable location when running from a read-only checkout.
+An explicit `grading_interpreters` list takes precedence, allowing a preinstalled
+environment on offline workers. `legacy_grading_env: false` restores server-Python
+grading for reproduction of historical runs; those runs may fail before executing
+model code when their scientific stack lacks benchmark APIs.
+
+SciCode-Verified continues to require its explicitly configured two interpreters;
+this environment is only the original SciCode benchmark default. Scores produced
+with the corrected environment should be recorded with the environment change,
+not silently substituted for historical scores. No prompts, extraction rules,
+tests, or reference solutions are changed.

@@ -826,3 +826,27 @@ class TestApp:
         assert result.step_environment_results == [{"py_a": False, "py_b": True}, {"py_a": False, "py_b": False}]
         assert [o["environment"] for o in result.step_outputs] == ["py_b", "py_b"]
         assert [o["passed"] for o in result.step_outputs] == [True, False]
+
+
+class TestLegacyGradingEnvironment:
+    def test_legacy_environment_selected_at_startup(self, tmp_path):
+        python = tmp_path / "bin" / "python"
+        with patch.object(app, "ensure_grading_env", return_value=python) as setup:
+            server = _server(legacy_grading_env=True, grading_venv_path=str(tmp_path))
+        setup.assert_called_once_with(tmp_path)
+        assert server._resolve_grading_interpreters() == [("scicode-legacy", str(python))]
+
+    def test_explicit_interpreter_takes_precedence(self):
+        with patch.object(app, "ensure_grading_env") as setup:
+            server = _server(
+                legacy_grading_env=True,
+                grading_interpreters=[{"name": "frozen", "python_executable": sys.executable}],
+            )
+        setup.assert_not_called()
+        assert server._resolve_grading_interpreters() == [("frozen", sys.executable)]
+
+    def test_legacy_does_not_bypass_verified_two_environment_requirement(self):
+        with patch.object(app, "ensure_grading_env") as setup:
+            with pytest.raises(RuntimeError, match="at least 2 grading interpreters"):
+                _server(legacy_grading_env=True, required_grading_interpreters=2)
+        setup.assert_not_called()

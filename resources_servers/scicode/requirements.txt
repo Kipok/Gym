@@ -1,6 +1,6 @@
 -e nemo-gym[dev] @ ../..
-# The executed SciCode solutions + test helpers import these at runtime, so they must be in
-# this server's venv. scipy>=1.14.1 is required for Python 3.13 wheels.
+# Server-Python fallback dependencies. Original benchmark grading uses the separate
+# grading-requirements.txt environment; this modern SciPy does not provide integrate.simps.
 scipy>=1.14.1
 numpy
 matplotlib
