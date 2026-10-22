@@ -526,6 +526,30 @@ class TestTokenAccounting:
         assert result.agent_metrics["num_subproblems"] == 3
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("context_rejected", [False, True])
+    async def test_local_context_rejection_is_distinct_from_zero_token_truncation(self, context_rejected):
+        zero = _usage(0, input_tokens=0, cached_tokens=0, reasoning_tokens=0)
+        row = await _collect_usage(
+            [_usage(100), zero],
+            n_steps=3 if context_rejected else 2,
+            response_overrides=[
+                {},
+                {
+                    "output": [],
+                    "status": "incomplete",
+                    "incomplete_details": {"reason": "max_output_tokens"},
+                    "metadata": {"nemo_gym_context_window_exceeded": "true"} if context_rejected else {},
+                },
+            ],
+        )
+        assert row["step_usage"][1]["status"] == ("context_window_exceeded" if context_rejected else "generated")
+        if context_rejected:
+            assert row["step_usage"][2]["status"] == "skipped"
+        assert row["response"]["usage"]["input_tokens_details"]["cached_tokens"] == 2
+        assert row["response"]["usage"]["output_tokens_details"]["reasoning_tokens"] == 3
+        assert row["response"]["usage"]["output_tokens"] == 100
+
+    @pytest.mark.asyncio
     @pytest.mark.parametrize("missing_index", [0, 1])
     async def test_missing_usage_stays_unknown_in_rollout_and_collection(self, missing_index):
         usages = [_usage(100), _usage(300)]

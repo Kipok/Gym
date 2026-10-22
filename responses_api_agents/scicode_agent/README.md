@@ -65,3 +65,14 @@ final-step metrics. Mixing versions is rejected.
   context
 
 The full wiring (resources server + this agent + dataset) lives in `benchmarks/scicode/config.yaml`.
+
+
+The vLLM adapter marks locally rejected context overflows in Responses metadata
+as `nemo_gym_context_window_exceeded: "true"`. The agent records those steps as
+`context_window_exceeded` and skips remaining steps, even with overflow propagation
+disabled. An ordinary zero-token `max_output_tokens` response has no such marker
+and remains a generated step; zero usage alone does not identify a context error.
+Rejected requests count as zero tokens processed (including cached/reasoning
+details), rather than the rejected prompt's length. All vLLM-backed benchmarks
+that encounter these requests can therefore report slightly lower generic token
+means, since the requests previously had unknown usage and were excluded.
