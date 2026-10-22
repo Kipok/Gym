@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Build original SciCode's legacy scientific stack without changing Gym's interpreter."""
+"""Build SciCode's pinned scientific stack in a separate interpreter."""
 
 import fcntl
 import hashlib
@@ -26,7 +26,7 @@ def ensure_grading_env(venv_path: Path) -> Path:
             return python
         uv = shutil.which("uv")
         if not uv:
-            raise RuntimeError("SciCode legacy grading requires uv on PATH or explicit grading_interpreters.")
+            raise RuntimeError("SciCode grading requires uv on PATH or explicit grading_interpreters.")
         if not python.is_file():
             subprocess.run([uv, "venv", "--python", PYTHON_VERSION, str(venv_path)], check=True)
         subprocess.run([uv, "pip", "install", "--python", str(python), "-r", str(REQUIREMENTS)], check=True)

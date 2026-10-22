@@ -1,9 +1,1 @@
 -e nemo-gym[dev] @ ../..
-# Server-Python fallback dependencies. Original benchmark grading uses the separate
-# grading-requirements.txt environment; this modern SciPy does not provide integrate.simps.
-scipy>=1.14.1
-numpy
-matplotlib
-h5py
-sympy
-networkx==3.5

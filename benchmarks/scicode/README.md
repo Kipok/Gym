@@ -59,8 +59,8 @@ to write the next function directly.
 
 ## Dependencies
 
-Original SciCode uses a separate legacy grading environment; see
-[Original SciCode grading environment](#original-scicode-grading-environment) below.
+SciCode executes generated solutions in a separate Python 3.11 environment with
+pinned scientific dependencies; see [Grading environment](#grading-environment).
 
 ## Running servers
 
@@ -134,24 +134,14 @@ model-generated, so treat the rollout file accordingly.
 Code: Apache 2.0
 Data (`SciCode1/SciCode`, `test_data.h5`): Apache 2.0
 
-## Original SciCode grading environment
+## Grading environment
 
-The benchmark automatically prepares an isolated Python 3.11 environment using `uv`
-with `resources_servers/scicode/grading-requirements.txt`. SciPy 1.10.1 matches
-NeMo-Skills' SciCode evaluator and preserves `scipy.integrate.simps`, used by the
-original problem dependencies. The Python 3.13+ Gym server keeps its own packages.
-The other direct scientific dependencies are pinned for repeatable execution.
+The resources server prepares an isolated Python 3.11 environment using `uv` and
+`resources_servers/scicode/grading-requirements.txt`. SciPy 1.10.1 provides
+`scipy.integrate.simps`, which the problem dependencies require. Gym keeps its
+own Python interpreter and does not install the grading packages into it.
 
-The first start requires access to Python/package downloads and a writable
-`grading_venv_path` (default `resources_servers/scicode/.grading_venv`). Set that
-path to a persistent writable location when running from a read-only checkout.
-An explicit `grading_interpreters` list takes precedence, allowing a preinstalled
-environment on offline workers. `legacy_grading_env: false` restores server-Python
-grading for reproduction of historical runs; those runs may fail before executing
-model code when their scientific stack lacks benchmark APIs.
-
-SciCode-Verified continues to require its explicitly configured two interpreters;
-this environment is only the original SciCode benchmark default. Scores produced
-with the corrected environment should be recorded with the environment change,
-not silently substituted for historical scores. No prompts, extraction rules,
-tests, or reference solutions are changed.
+The first start requires Python/package download access and a writable
+`grading_venv_path` (default `resources_servers/scicode/.grading_venv`). Set this
+path to persistent writable storage when running from a read-only checkout.
+Subsequent starts reuse the environment; a requirements change updates it.
