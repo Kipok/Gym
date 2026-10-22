@@ -137,11 +137,14 @@ Data (`SciCode1/SciCode`, `test_data.h5`): Apache 2.0
 ## Grading environment
 
 The resources server prepares an isolated Python 3.11 environment using `uv` and
-`resources_servers/scicode/grading-requirements.txt`. SciPy 1.10.1 provides
+`resources_servers/scicode/grading-requirements.lock`, including resolved transitive
+dependencies. SciPy 1.10.1 provides
 `scipy.integrate.simps`, which the problem dependencies require. Gym keeps its
 own Python interpreter and does not install the grading packages into it.
 
 The first start requires Python/package download access and a writable
 `grading_venv_path` (default `resources_servers/scicode/.grading_venv`). Set this
 path to persistent writable storage when running from a read-only checkout.
-Subsequent starts reuse the environment; a requirements change updates it.
+Subsequent starts reuse a matching environment offline. A lock or Python-version
+change recreates it and synchronizes packages with `uv pip sync`. See the
+[resources-server README](../../resources_servers/scicode/README.md) for lock regeneration.
