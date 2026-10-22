@@ -678,12 +678,13 @@ async def test_collector_builds_perf_from_generated_substeps(prefilled):
 
 class TestHeadlineRepeatIntervals:
     @pytest.mark.asyncio
-    async def test_endpoint_exports_weighted_subtask_and_problem_intervals(self):
+    @pytest.mark.parametrize("agent_name", ["scicode", "scicode_verified_with_background_agent"])
+    async def test_endpoint_exports_weighted_subtask_and_problem_intervals(self, agent_name):
         rows = [
             {
                 **_repeat(repeat, passed, total),
                 "_ng_task_index": task,
-                "agent_ref": {"name": "scicode"},
+                "agent_ref": {"name": agent_name},
                 "reward": float(passed == total),
             }
             for task, total, values in [(0, 2, [2, 1, 0]), (1, 4, [3, 4, 3])]
@@ -701,10 +702,38 @@ class TestHeadlineRepeatIntervals:
         assert result.key_metrics["subtask_accuracy"] == pytest.approx(13 / 18)
 
     @pytest.mark.asyncio
-    async def test_single_repeat_has_no_headline_interval(self):
-        rows = [{**_repeat(0, 1, 2), "_ng_task_index": 0, "agent_ref": {"name": "scicode"}, "reward": 0.0}]
+    @pytest.mark.parametrize("agent_name", ["scicode", "scicode_verified_with_background_agent"])
+    async def test_single_repeat_has_no_headline_interval(self, agent_name):
+        rows = [{**_repeat(0, 1, 2), "_ng_task_index": 0, "agent_ref": {"name": agent_name}, "reward": 0.0}]
         result = await _agent().aggregate_metrics(AggregateMetricsRequest(verify_responses=rows))
         assert not any(key.startswith("ci_low_95_across_repeats/") for key in result.key_metrics)
+
+    @pytest.mark.asyncio
+    async def test_verified_eight_repeat_intervals_match_independent_estimates(self):
+        passed_by_problem = [(2, [2, 1, 0, 2, 0, 1, 2, 1]), (4, [4, 4, 3, 2, 4, 0, 4, 3])]
+        rows = [
+            {
+                **_repeat(repeat, passed, total),
+                "_ng_task_index": task,
+                "agent_ref": {"name": "scicode_verified_with_background_agent"},
+                "reward": float(passed == total),
+            }
+            for task, (total, passed_values) in enumerate(passed_by_problem)
+            for repeat, passed in enumerate(passed_values)
+        ]
+        result = await _agent().aggregate_metrics(AggregateMetricsRequest(verify_responses=rows))
+        subtask_means = [(left + right) / 6 for left, right in zip(*[values for _, values in passed_by_problem])]
+        problem_means = [
+            (float(left == 2) + float(right == 4)) / 2
+            for left, right in zip(*[values for _, values in passed_by_problem])
+        ]
+        # Student-t critical value for seven degrees of freedom, independent of Gym's helper.
+        for metric, values in (("subtask_accuracy", subtask_means), ("mean/problem_accuracy", problem_means)):
+            mean = statistics.mean(values)
+            half_width = 2.3646242515927844 * statistics.stdev(values) / 8**0.5
+            assert result.key_metrics[f"mean_across_repeats/{metric}"] == pytest.approx(mean)
+            assert result.key_metrics[f"ci_low_95_across_repeats/{metric}"] == pytest.approx(mean - half_width)
+            assert result.key_metrics[f"ci_high_95_across_repeats/{metric}"] == pytest.approx(mean + half_width)
 
 
 class TestStepStopMetadata:
