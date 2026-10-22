@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 
-REQUIREMENTS = Path(__file__).with_name("grading-requirements.txt")
+REQUIREMENTS = Path(__file__).with_name("grading-requirements.lock")
 PYTHON_VERSION = "3.11"
 
 
@@ -27,9 +27,10 @@ def ensure_grading_env(venv_path: Path) -> Path:
         uv = shutil.which("uv")
         if not uv:
             raise RuntimeError("SciCode grading requires uv on PATH or explicit grading_interpreters.")
-        if not python.is_file():
-            subprocess.run([uv, "venv", "--python", PYTHON_VERSION, str(venv_path)], check=True)
-        subprocess.run([uv, "pip", "install", "--python", str(python), "-r", str(REQUIREMENTS)], check=True)
+        marker.unlink(missing_ok=True)
+        # Python-version changes and removed requirements require a clean environment.
+        subprocess.run([uv, "venv", "--clear", "--python", PYTHON_VERSION, str(venv_path)], check=True)
+        subprocess.run([uv, "pip", "sync", "--python", str(python), str(REQUIREMENTS)], check=True)
         # Check APIs the original benchmark uses, including ones missing in modern SciPy.
         subprocess.run(
             [
