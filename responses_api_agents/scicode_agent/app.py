@@ -324,6 +324,11 @@ class ScicodeAgent(SimpleResponsesAPIAgent):
             step_record["usage"] = model_response.usage.model_dump() if model_response.usage is not None else None
             usage_complete = usage_complete and model_response.usage is not None
             usage = accumulate_response_usage(usage, model_response.usage)
+            if (model_response.metadata or {}).get("nemo_gym_context_window_exceeded") == "true":
+                step_record["status"] = "context_window_exceeded"
+                out_of_context = True
+                solutions[f"{body.problem_id}.{cur_step + 1}"] = OUT_OF_CONTEXT
+                continue
             generation = model_response.output_text
             extracted = extract_python_script(generation)
             previous_llm_code[cur_step] = extracted
