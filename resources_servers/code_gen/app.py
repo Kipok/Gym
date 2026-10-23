@@ -21,7 +21,6 @@ from asyncio import Semaphore
 from time import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from lcb_integration.compute_code_generation_metrics import check_correctness_remote
 from lcb_integration.extraction_utils import LMStyle, extract_code
 from pydantic import BaseModel, Field, model_validator
 from sandbox_execution import check_correctness_in_sandbox
@@ -257,6 +256,8 @@ class CompCodingResourcesServer(SimpleResourcesServer):
             )
 
             if self.config.sandbox_provider is None:
+                from lcb_integration.compute_code_generation_metrics import check_correctness_remote
+
                 future = check_correctness_remote.remote(*task_args)
                 result, metadata = await future
             else:
