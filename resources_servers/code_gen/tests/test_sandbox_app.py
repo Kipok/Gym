@@ -13,6 +13,7 @@ from omegaconf import OmegaConf
 from pydantic import ValidationError
 from sandbox_app import CompCodingSandboxResourcesServer
 
+from nemo_gym.base_resources_server import ReverifyMode
 from nemo_gym.cli.env import _ray_server_names
 from nemo_gym.server_utils import ServerClient, _connect_server_to_ray
 
@@ -74,3 +75,20 @@ def test_sandbox_entrypoint_requires_provider(provider):
             CompCodingSandboxResourcesServer(**kwargs)
     else:
         assert CompCodingSandboxResourcesServer(**kwargs).config.sandbox_provider == "sandbox"
+
+
+@pytest.mark.asyncio
+async def test_code_gen_advertises_stateless_reverification():
+    config = CompCodingResourcesServerConfig(
+        host="127.0.0.1",
+        port=8080,
+        name="code_gen",
+        entrypoint="sandbox_app.py",
+        num_processes=1,
+        unit_test_timeout_secs=10,
+        debug=False,
+        sandbox_provider="sandbox",
+        sandbox_config={"image": "code-gen-verifier:test"},
+    )
+    server = CompCodingSandboxResourcesServer(config=config, server_client=MagicMock(spec=ServerClient))
+    assert await server.get_reverify_mode() == ReverifyMode.STATELESS

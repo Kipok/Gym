@@ -19,7 +19,7 @@ import logging
 import zlib
 from asyncio import Semaphore
 from time import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 from lcb_integration.extraction_utils import LMStyle, extract_code
 from pydantic import BaseModel, Field, model_validator
@@ -30,6 +30,7 @@ from nemo_gym.base_resources_server import (
     BaseRunRequest,
     BaseVerifyRequest,
     BaseVerifyResponse,
+    ReverifyMode,
     SimpleResourcesServer,
 )
 from nemo_gym.global_config import get_global_config_dict
@@ -50,6 +51,8 @@ LOG = logging.getLogger(__name__)
 # Config
 # ----------------------------
 class CompCodingResourcesServerConfig(BaseResourcesServerConfig):
+    REVERIFY_MODE: ClassVar[ReverifyMode] = ReverifyMode.STATELESS
+
     num_processes: int
     unit_test_timeout_secs: int
     debug: bool
