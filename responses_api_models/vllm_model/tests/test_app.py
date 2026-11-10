@@ -9193,6 +9193,7 @@ async def test_a_context_refusal_after_the_reply_started_propagates() -> None:
     assert [message["status"] for message in sent] == [200]
 
 
+
 def test_session_header_survives_cookie_changes_and_separates_runs(monkeypatch):
     from nemo_gym.core.episode_context import rollout_context
 
@@ -9211,3 +9212,16 @@ def test_session_header_survives_cookie_changes_and_separates_runs(monkeypatch):
     server.config.session_id_header_prefix = None
     with rollout_context("0-0"), raises(ValueError, match="run-specific"):
         server._backend_session_options(request)
+
+def test_transport_log_uses_capture_identity_over_trace_headers():
+    from starlette.requests import Request
+
+    request = Request(
+        {
+            "type": "http",
+            "headers": [(b"x-nemo-gym-log-rollout-id", b"untrusted")],
+            "state": {"nemo_gym_model_call_identity": {"rollout_id": "0-0", "model_call_id": "unique-call"}},
+        }
+    )
+    assert _transport_log_context(request) == {"rollout_id": "0-0", "model_call_id": "unique-call"}
+
